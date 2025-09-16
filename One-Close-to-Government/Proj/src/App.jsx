@@ -28,7 +28,6 @@ export default function App() {
                 <>
                   <Hero />
                   <CivicConnect />
-                  <Working />
                 </>
               }
             />
@@ -159,6 +158,7 @@ export default function App() {
             {/* Legacy routes for backward compatibility */}
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/user-login" element={<UserLogin />} />
+             <Route path="/working-w" element={<Working />} />
 
           </Routes>
         </div>

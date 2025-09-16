@@ -1,11 +1,14 @@
 import { useContext, useState } from "react";
 import { NotificationContext } from "./NotificationContext";
 import { useReports } from "./ReportsContext";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 
 export default function UserDashboard() {
   const { notifications } = useContext(NotificationContext);
   const { reports } = useReports();
+  const navigate = useNavigate();
 
 
   // State for filters
@@ -44,21 +47,6 @@ export default function UserDashboard() {
     <div className="p-6 min-h-screen bg-gray-100">
       {/* Dashboard Header */}
       <h1 className="text-3xl font-bold pt-16 mb-6">User Dashboard</h1>
-
-
-      {/* Profile Section */}
-      <div className="flex items-center gap-6 bg-white p-6 shadow rounded-lg mb-6">
-        <img
-          src="/default-profile.png"
-          alt="Profile"
-          className="w-20 h-20 rounded-full border cursor-pointer"
-        />
-        <div>
-          <h2 className="text-xl font-bold">Souvik Mandal</h2>
-          <p className="text-gray-600">Username: souvik123</p>
-          <p className="text-gray-600">Password: ********</p>
-        </div>
-      </div>
 
 
       {/* Notifications Section */}
@@ -149,21 +137,34 @@ export default function UserDashboard() {
                 key={report.id || index}
                 className="p-4 border rounded-lg bg-gray-50 shadow-sm"
               >
-                <p className="text-blue-700 font-bold">
-                  Report ID: #{String(index + 1).padStart(5, "0")}
+               <p className="text-blue-700">Report ID:#{report.id}</p>
+                <p className="text-gray-700">
+                  {report.images.length > 0 && (
+                  <div className="flex gap-3 overflow-x-auto mb-3">
+                    {report.images.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img}
+                        alt="Uploaded"
+                        className="h-24 w-24 object-cover rounded-lg shadow-md"
+                      />
+                    ))}
+                  </div>
+                )}
+                  <strong>Description:</strong> {report.description}
                 </p>
                 <p>
-                  <b>Description:</b> {report.description}
+                  <strong>Issue:</strong> {report.issueType}
                 </p>
                 <p>
-                  <b>Issue:</b> {report.issueType}
+                  <strong>Department:</strong> {report.department}
                 </p>
                 <p>
-                  <b>Department:</b> {report.department}
+                  <strong>Location:</strong> {report.location}
                 </p>
-                <p>
-                  <b>Location:</b> {report.location}
-                </p>
+                {report.voiceNote && (
+                  <audio controls src={report.voiceNote} className="mt-2 w-full" />
+                )}
                 <p>
                   <b>Status:</b>{" "}
                   <span
@@ -182,6 +183,16 @@ export default function UserDashboard() {
             ))}
           </ul>
         )}
+      </div>
+      <div className="flex flex-col items-center justify-center gap-6 p-6">
+         <motion.button
+        onClick={() => navigate("/working-w")}
+        className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-xl shadow-md hover:bg-blue-700 transition"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Report New Issue
+      </motion.button>
       </div>
     </div>
   );
