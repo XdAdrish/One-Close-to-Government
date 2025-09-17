@@ -1,12 +1,40 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { NotificationContext } from "./NotificationContext";
 import { useReports } from "./ReportsContext"; // ✅ Get reports context
+import { useAuth } from "@clerk/clerk-react";
 
 
 export default function AdminDashboard() {
   const { addNotification } = useContext(NotificationContext);
   const { reports, setReports } = useReports(); // ✅ Access reports and updater function
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(true);
 
+
+  // Fetch all reports on mount
+  useEffect(() => {
+    const fetchAllReports = async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch("http://localhost:5000/api/reports", {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        
+        if (response.ok) {
+          const allReports = await response.json();
+          setReports(allReports);
+        } else {
+          console.warn("Failed to fetch all reports:", response.status);
+        }
+      } catch (error) {
+        console.warn("Error fetching all reports:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllReports();
+  }, [getToken, setReports]);
 
   // Make sure reports is always an array
   const safeReports = Array.isArray(reports) ? reports : [];
@@ -30,12 +58,33 @@ export default function AdminDashboard() {
 
 
   // Handle status change for a specific report
-  const handleStatusChange = (reportId, newStatus) => {
-    const updatedReports = safeReports.map((report) =>
-      report.id === reportId ? { ...report, status: newStatus } : report
-    );
-    setReports(updatedReports);
-    alert(`✅ Status updated to "${newStatus}"`);
+  const handleStatusChange = async (reportId, newStatus) => {
+    try {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:5000/api/reports/${reportId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        const updatedReport = await response.json();
+        const updatedReports = safeReports.map((report) =>
+          report._id === reportId ? updatedReport : report
+        );
+        setReports(updatedReports);
+        alert(`✅ Status updated to "${newStatus}"`);
+      } else {
+        console.warn("Failed to update status:", response.status);
+        alert("❌ Failed to update status");
+      }
+    } catch (error) {
+      console.warn("Error updating status:", error);
+      alert("❌ Error updating status");
+    }
   };
 
 
@@ -62,6 +111,17 @@ export default function AdminDashboard() {
     return issueMatch && departmentMatch && statusMatch && searchMatch;
   });
 
+
+  if (loading) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading all reports...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 min-h-screen bg-gray-100">
@@ -199,7 +259,7 @@ export default function AdminDashboard() {
                   <label className="text-sm font-medium mr-2">Update Status:</label>
                   <select
                     value={report.status || "Pending"}
-                    onChange={(e) => handleStatusChange(report.id, e.target.value)}
+                    onChange={(e) => handleStatusChange(report._id, e.target.value)}
                     className="border border-gray-300 rounded-lg p-2"
                   >
                     <option value="Pending">Pending</option>

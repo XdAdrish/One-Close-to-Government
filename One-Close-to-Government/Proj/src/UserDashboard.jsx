@@ -1,14 +1,17 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { NotificationContext } from "./NotificationContext";
 import { useReports } from "./ReportsContext";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 
 
 export default function UserDashboard() {
   const { notifications } = useContext(NotificationContext);
-  const { reports } = useReports();
+  const { reports, setReports } = useReports();
   const navigate = useNavigate();
+  const { getToken } = useAuth();
+  const [loading, setLoading] = useState(true);
 
 
   // State for filters
@@ -16,6 +19,31 @@ export default function UserDashboard() {
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
+
+  // Fetch user reports on mount
+  useEffect(() => {
+    const fetchUserReports = async () => {
+      try {
+        const token = await getToken();
+        const response = await fetch("http://localhost:5000/api/reports/my", {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        
+        if (response.ok) {
+          const userReports = await response.json();
+          setReports(userReports);
+        } else {
+          console.warn("Failed to fetch user reports:", response.status);
+        }
+      } catch (error) {
+        console.warn("Error fetching user reports:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserReports();
+  }, [getToken, setReports]);
 
   // Safe fallback for reports
   const safeReports = Array.isArray(reports) ? reports : [];
@@ -42,6 +70,17 @@ export default function UserDashboard() {
     return issueMatch && departmentMatch && searchMatch;
   });
 
+
+  if (loading) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your reports...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 min-h-screen bg-gray-100">

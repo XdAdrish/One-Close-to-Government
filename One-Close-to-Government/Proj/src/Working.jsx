@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useAuth } from "@clerk/clerk-react";
 import { FiMic, FiPauseCircle, FiPlayCircle } from "react-icons/fi";
 import { useReports } from "./ReportsContext"; // make sure this path matches your project
 
 
 export default function Working() {
+  const { getToken } = useAuth();
   // Context (global reports)
   const { reports, setReports } = useReports(); // <-- uses global context
 const [reportCounter , setReportCounter] = useState([]);
@@ -225,9 +227,11 @@ const [reportCounter , setReportCounter] = useState([]);
       }
 
 
-      // POST to backend (adjust URL to your backend)
+      // POST to backend with Clerk token
+      const token = await getToken();
       const res = await fetch("http://localhost:5000/api/reports", {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData,
       });
 
